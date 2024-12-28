@@ -7,7 +7,7 @@ import { Reservation } from '../models/reservation';
   providedIn: 'root'
 })
 export class ReservationService {
-  private apiUrl = 'http://localhost:5167/api/reservations';
+  private apiUrl = 'https://resv-back-production.up.railway.app/api/reservations';
 
   constructor(private http: HttpClient) { }
 

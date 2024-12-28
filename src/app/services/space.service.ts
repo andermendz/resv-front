@@ -7,7 +7,7 @@ import { Space } from '../models/space';
   providedIn: 'root'
 })
 export class SpaceService {
-  private apiUrl = 'http://localhost:5167/api/spaces'; // backend port
+  private apiUrl = 'https://resv-back-production.up.railway.app/api/spaces'; // backend port
 
   constructor(private http: HttpClient) { }
 
