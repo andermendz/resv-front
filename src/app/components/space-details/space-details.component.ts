@@ -900,11 +900,11 @@ export class SpaceDetailsComponent implements OnInit {
     // generar opciones de horario
     this.generateTimeOptions();
 
-    // establecer filtro de fecha inicial al mes actual
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    this.filterStartDate = firstDay.toISOString().split('T')[0];
-    this.filterEndDate = lastDay.toISOString().split('T')[0];
+    // establecer filtro de fecha desde hoy hasta un mes después
+    const oneMonthFromNow = new Date();
+    oneMonthFromNow.setMonth(today.getMonth() + 1);
+    this.filterStartDate = today.toISOString().split('T')[0];
+    this.filterEndDate = oneMonthFromNow.toISOString().split('T')[0];
   }
 
   ngOnInit() {
@@ -1045,24 +1045,17 @@ export class SpaceDetailsComponent implements OnInit {
       endDate = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59);
     }
 
-    this.reservationService.getReservations(
-      this.spaceId,
-      undefined,
-      startDate,
-      endDate
-    ).subscribe(reservations => {
-      // Apply cedula filter locally
-      this.filteredReservations = reservations.filter(reservation => {
-        if (this.filterCedula && this.filterCedula.trim() !== '') {
-          return reservation.cedula.toLowerCase().includes(this.filterCedula.toLowerCase().trim());
-        }
-        return true;
-      });
-
-      // Sort reservations by date and time
-      this.filteredReservations.sort((a, b) => {
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-      });
+    this.filteredReservations = this.allReservations.filter(reservation => {
+      const reservationDate = new Date(reservation.startTime);
+      
+      // Filter by date range if specified
+      if (startDate && reservationDate < startDate) return false;
+      if (endDate && reservationDate > endDate) return false;
+      
+      // Filter by cedula if specified
+      if (this.filterCedula && !reservation.cedula.includes(this.filterCedula)) return false;
+      
+      return true;
     });
   }
 
