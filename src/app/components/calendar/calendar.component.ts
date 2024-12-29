@@ -1107,11 +1107,9 @@ export class CalendarComponent implements OnInit {
   getFormattedTime(dateStr: string | Date): string {
     if (!dateStr) return '';
     const date = new Date(dateStr);
-    return date.toLocaleTimeString('es-ES', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      hour12: false
-    });
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   }
 
   getReservationTitle(reservation: Reservation): string {
