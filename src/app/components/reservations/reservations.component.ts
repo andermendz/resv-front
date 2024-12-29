@@ -461,8 +461,16 @@ export class ReservationsComponent implements OnInit {
 
   updateReservationTimes() {
     if (this.selectedDate && this.selectedStartTime && this.selectedEndTime) {
-      this.newReservation.startTime = `${this.selectedDate}T${this.selectedStartTime}:00`;
-      this.newReservation.endTime = `${this.selectedDate}T${this.selectedEndTime}:00`;
+      // Parse the selected times
+      const [startHours, startMinutes] = this.selectedStartTime.split(':').map(Number);
+      const [endHours, endMinutes] = this.selectedEndTime.split(':').map(Number);
+      
+      // Create UTC dates using the selected date
+      const [year, month, day] = this.selectedDate.split('-').map(Number);
+      
+      // Create the dates directly in UTC
+      this.newReservation.startTime = new Date(Date.UTC(year, month - 1, day, startHours, startMinutes, 0)).toISOString();
+      this.newReservation.endTime = new Date(Date.UTC(year, month - 1, day, endHours, endMinutes, 0)).toISOString();
     }
   }
 

@@ -19,13 +19,13 @@ export class ReservationService {
     if (startDate) {
       const startOfDay = new Date(startDate);
       startOfDay.setHours(0, 0, 0, 0);
-      params = params.set('startDate', startOfDay.toISOString());
+      params = params.set('startDate', startOfDay.toISOString().split('T')[0] + 'T00:00:00.000Z');
     }
     
     if (endDate) {
       const endOfDay = new Date(endDate);
       endOfDay.setHours(23, 59, 59, 999);
-      params = params.set('endDate', endOfDay.toISOString());
+      params = params.set('endDate', endOfDay.toISOString().split('T')[0] + 'T23:59:59.999Z');
     }
 
     return this.http.get<Reservation[]>(this.apiUrl, { params });

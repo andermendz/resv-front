@@ -90,7 +90,7 @@ interface TimeOption {
               <tbody>
                 <tr *ngFor="let reservation of filteredReservations">
                   <td>{{ reservation.startTime | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ reservation.startTime | date:'HH:mm' }} - {{ reservation.endTime | date:'HH:mm' }}</td>
+                  <td>{{ reservation.startTime | date:'HH:mm':'UTC' }} - {{ reservation.endTime | date:'HH:mm':'UTC' }}</td>
                   <td>{{ reservation.cedula }}</td>
                   <td>
                     <button 

@@ -1,5 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, OnInit, PLATFORM_ID, Inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Reservation } from '../../models/reservation';
 import { ReservationService } from '../../services/reservation.service';
@@ -36,7 +36,7 @@ interface CalendarDay {
             <i class="fas fa-chevron-right"></i>
           </button>
         </div>
-        <div class="view-selector">
+        <div class="view-selector desktop-only">
           <button 
             class="view-button" 
             [class.active]="currentView === 'month'"
@@ -58,7 +58,7 @@ interface CalendarDay {
 
       <div class="calendar-views">
         <!-- Month View -->
-        <div class="view-container month-view" [class.active]="currentView === 'month'">
+        <div class="view-container month-view desktop-only" [class.active]="currentView === 'month'">
           <div class="calendar-grid">
             <div class="weekday-header" *ngFor="let day of weekDays">{{ day }}</div>
             <div 
@@ -86,7 +86,7 @@ interface CalendarDay {
         </div>
 
         <!-- Week View -->
-        <div class="view-container week-view" [class.active]="currentView === 'week'">
+        <div class="view-container week-view" [class.active]="currentView === 'week' || isMobile">
           <div class="time-grid">
             <div class="week-header">
               <div class="time-cell"></div>
@@ -96,6 +96,7 @@ interface CalendarDay {
                 [class.today]="isToday(day.date)">
                 <div class="day-name">{{ getSpanishWeekDayShort(day.date) }}</div>
                 <div class="day-number">{{ day.date | date:'d' }}</div>
+                <div class="month-label">{{ getSpanishMonthShort(day.date) }}</div>
               </div>
             </div>
             <div class="scrollable-content">
@@ -144,16 +145,21 @@ interface CalendarDay {
       height: 100%;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .calendar-header {
-      padding: 1.5rem;
+      padding: 1.5rem 1rem;
       border-bottom: 1px solid var(--gray-200);
       background: white;
       position: sticky;
       top: 0;
       z-index: 3;
       flex-shrink: 0;
+
+      @media (min-width: 768px) {
+        padding: 1.5rem;
+      }
     }
 
     .calendar-nav {
@@ -164,10 +170,43 @@ interface CalendarDay {
 
       h3 {
         margin: 0;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 600;
-        min-width: 200px;
+        min-width: 180px;
         text-align: center;
+
+        @media (min-width: 768px) {
+          font-size: 1.25rem;
+          min-width: 200px;
+        }
+      }
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--gray-100);
+      border: none;
+      border-radius: 0.5rem;
+      color: var(--gray-700);
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: var(--gray-200);
+      }
+
+      i {
+        font-size: 0.875rem;
+      }
+    }
+
+    .desktop-only {
+      @media (max-width: 767px) {
+        display: none !important;
       }
     }
 
@@ -229,6 +268,219 @@ interface CalendarDay {
       }
     }
 
+    .week-view {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+
+      .time-grid {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .week-header {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 1fr);
+        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        position: sticky;
+        top: 0;
+        z-index: 2;
+
+        @media (max-width: 767px) {
+          grid-template-columns: 40px repeat(7, 1fr);
+        }
+      }
+
+      .day-column-header {
+        padding: 0.75rem 0.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        border-left: 1px solid var(--gray-200);
+        background: white;
+
+        &.today {
+          background: var(--primary-50);
+          font-weight: 500;
+
+          .day-number {
+            background: var(--primary);
+            color: white;
+          }
+        }
+
+        .day-name {
+          font-weight: 500;
+          color: var(--gray-700);
+          margin-bottom: 0.25rem;
+
+          @media (max-width: 767px) {
+            font-size: 0.75rem;
+          }
+        }
+
+        .day-number {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          margin-bottom: 0.25rem;
+
+          @media (max-width: 767px) {
+            width: 20px;
+            height: 20px;
+            font-size: 0.875rem;
+          }
+        }
+
+        .month-label {
+          font-size: 0.75rem;
+          color: var(--gray-500);
+
+          @media (max-width: 767px) {
+            font-size: 0.6875rem;
+          }
+        }
+      }
+
+      .scrollable-content {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .time-body {
+        display: grid;
+        grid-template-columns: 50px 1fr;
+        min-height: 100%;
+
+        @media (max-width: 767px) {
+          grid-template-columns: 40px 1fr;
+        }
+      }
+
+      .time-column {
+        .time-slot-label {
+          height: 60px;
+          padding: 0.25rem;
+          text-align: center;
+          font-size: 0.75rem;
+          color: var(--gray-500);
+          border-right: 1px solid var(--gray-200);
+
+          @media (max-width: 767px) {
+            font-size: 0.6875rem;
+          }
+        }
+      }
+
+      .day-columns {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .day-column {
+        position: relative;
+        border-right: 1px solid var(--gray-200);
+
+        &:last-child {
+          border-right: none;
+        }
+      }
+
+      .hour-slots {
+        position: relative;
+      }
+
+      .hour-slot {
+        height: 60px;
+        border-bottom: 1px solid var(--gray-200);
+      }
+
+      .event-block {
+        position: absolute;
+        left: 4px;
+        right: 4px;
+        margin: 2px 0;
+        padding: 2px 0;
+        background: var(--primary);
+        border-radius: 0.375rem;
+        color: white;
+        font-size: 0.75rem;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+        @media (max-width: 767px) {
+          font-size: 0.6875rem;
+          left: 2px;
+          right: 2px;
+          padding: 1px 0;
+        }
+
+        &:hover {
+          transform: scale(1.02);
+          z-index: 2;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        &:not(:last-child) {
+          margin-bottom: 4px;
+        }
+      }
+
+      .event-content {
+        padding: 0.375rem 0.5rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.05), transparent);
+
+        @media (max-width: 767px) {
+          padding: 0.25rem 0.375rem;
+        }
+      }
+
+      .event-time {
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.8125rem;
+
+        @media (max-width: 767px) {
+          font-size: 0.75rem;
+        }
+      }
+
+      .event-user {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 0.9;
+        font-size: 0.75rem;
+
+        @media (max-width: 767px) {
+          font-size: 0.6875rem;
+        }
+
+        i {
+          font-size: 0.75rem;
+          opacity: 0.8;
+        }
+      }
+    }
+
     .month-view {
       height: 100%;
       display: flex;
@@ -237,328 +489,121 @@ interface CalendarDay {
       .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        grid-template-rows: auto;
         background: var(--gray-50);
         flex: 1;
       }
-    }
 
-    .week-view {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-      max-height: 700px;
-
-      .time-grid {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        min-height: 0;
+      .weekday-header {
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+        color: var(--gray-700);
         background: white;
-      }
-
-      .week-header {
-        display: flex;
-        border-bottom: 2px solid var(--gray-200);
-        background: white;
+        border-bottom: 1px solid var(--gray-200);
+        font-size: 0.875rem;
         position: sticky;
         top: 0;
         z-index: 2;
-        height: 60px;
-        flex-shrink: 0;
       }
 
-      .scrollable-content {
-        flex: 1;
-        overflow-y: auto;
-        min-height: 0;
-      }
-
-      .time-body {
-        flex: 1;
-        display: flex;
-        overflow: auto;
-        position: relative;
-        min-height: 0;
+      .calendar-day {
+        padding: 0.75rem;
+        border-right: 1px solid var(--gray-200);
+        border-bottom: 1px solid var(--gray-200);
         background: white;
-        height: 900px;
+        min-height: 120px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+
+        &:hover:not(.other-month) {
+          background: var(--gray-50);
+        }
+
+        &.other-month {
+          background: var(--gray-50);
+          color: var(--gray-400);
+
+          .event-indicator {
+            opacity: 0.5;
+          }
+        }
+
+        &.current-month {
+          color: var(--gray-800);
+        }
+
+        &.has-events {
+          background: var(--gray-50);
+        }
+
+        &.today {
+          background: var(--primary-50);
+          font-weight: 500;
+
+          .day-number {
+            background: var(--primary);
+            color: white;
+          }
+
+          .event-indicator {
+            background: var(--primary);
+            color: white;
+          }
+        }
       }
-    }
 
-    .weekday-header {
-      padding: 1rem;
-      text-align: center;
-      font-weight: 600;
-      color: var(--gray-700);
-      background: white;
-      border-bottom: 1px solid var(--gray-200);
-      font-size: 0.875rem;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-    }
-
-    .calendar-day {
-      padding: 0.75rem;
-      border-right: 1px solid var(--gray-200);
-      border-bottom: 1px solid var(--gray-200);
-      background: white;
-      min-height: 100px;
-      cursor: pointer;
-      transition: all 0.2s;
-
-      &.other-month {
-        background: var(--gray-50);
-        color: var(--gray-400);
+      .day-number {
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        height: 24px;
+        width: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
       }
 
-      &.current-month {
-        color: var(--gray-800);
+      .day-events {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
       }
 
-      &.has-events {
-        background: var(--gray-50);
-      }
-
-      &.today {
+      .event-indicator {
+        padding: 0.375rem 0.5rem;
         background: var(--primary);
         color: white;
-
-        .event-indicator {
-          background: white;
-          color: var(--primary);
-        }
-
-        .more-events {
-          color: white;
-          opacity: 0.9;
-        }
-      }
-
-      &:hover:not(.other-month) {
-        background: var(--gray-100);
-      }
-    }
-
-    .day-number {
-      font-weight: 600;
-      font-size: 0.875rem;
-      margin-bottom: 0.5rem;
-      display: block;
-    }
-
-    .day-events {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .event-indicator {
-      padding: 0.25rem 0.5rem;
-      background: var(--primary);
-      color: white;
-      border-radius: 0.25rem;
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .more-events {
-      font-size: 0.75rem;
-      color: var(--gray-600);
-      text-align: center;
-      margin-top: 0.25rem;
-    }
-
-    .time-grid {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      min-height: 0;
-      background: white;
-    }
-
-    .time-header {
-      display: flex;
-      border-bottom: 2px solid var(--gray-200);
-      background: white;
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      height: 60px;
-      flex-shrink: 0;
-    }
-
-    .time-cell {
-      width: 60px;
-      flex-shrink: 0;
-      border-right: 1px solid var(--gray-200);
-      background: white;
-    }
-
-    .day-column-header {
-      flex: 1;
-      min-width: 120px;
-      padding: 0.5rem;
-      text-align: center;
-      border-right: 1px solid var(--gray-200);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 0.25rem;
-      background: white;
-
-      &.today {
-        background: var(--primary-50);
-        color: var(--primary);
-      }
-
-      &:last-child {
-        border-right: none;
-      }
-    }
-
-    .time-body {
-      flex: 1;
-      display: flex;
-      overflow: auto;
-      position: relative;
-      min-height: 0;
-      background: white;
-      height: 900px;
-    }
-
-    .time-column {
-      width: 60px;
-      flex-shrink: 0;
-      border-right: 1px solid var(--gray-200);
-      background: white;
-      position: sticky;
-      left: 0;
-      z-index: 2;
-    }
-
-    .time-slot-label {
-      height: 60px;
-      padding: 0.25rem 0.5rem;
-      font-size: 0.75rem;
-      color: var(--gray-600);
-      text-align: right;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      position: relative;
-      background: white;
-    }
-
-    .day-columns {
-      flex: 1;
-      display: flex;
-      min-width: min-content;
-    }
-
-    .day-column {
-      flex: 1;
-      min-width: 120px;
-      border-right: 1px solid var(--gray-200);
-      position: relative;
-
-      &:last-child {
-        border-right: none;
-      }
-    }
-
-    .hour-slots {
-      position: relative;
-      height: 900px;
-    }
-
-    .hour-slot {
-      height: 60px;
-      border-bottom: 1px solid var(--gray-200);
-      position: relative;
-
-      &:nth-child(even) {
-        background: var(--gray-50);
-      }
-    }
-
-    .event-block {
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      background: var(--primary);
-      color: white;
-      border-radius: 4px;
-      padding: 0.5rem;
-      font-size: 0.75rem;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      z-index: 1;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      min-height: 45px;
-
-      &:hover {
-        transform: scale(1.02);
-        z-index: 2;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      }
-    }
-
-    .event-content {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      justify-content: center;
-    }
-
-    .event-time {
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-size: 0.8rem;
-    }
-
-    .event-user {
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
-      opacity: 0.9;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-
-      i {
+        border-radius: 0.25rem;
         font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: all 0.2s;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-time {
+          font-weight: 500;
+        }
       }
-    }
 
-    .icon-button {
-      background: transparent;
-      color: var(--gray-600);
-      padding: 0.75rem;
-      border: none;
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &:hover {
+      .more-events {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        text-align: center;
+        margin-top: 0.25rem;
+        padding: 0.25rem;
         background: var(--gray-100);
-        color: var(--gray-800);
-      }
-
-      i {
-        font-size: 1.25rem;
+        border-radius: 0.25rem;
       }
     }
   `]
@@ -572,16 +617,45 @@ export class CalendarComponent implements OnInit {
   calendarDays: CalendarDay[] = [];
   currentWeek: CalendarDay[] = [];
   reservations: Reservation[] = [];
+  isMobile = false;
+  private isBrowser: boolean;
 
-  constructor(private reservationService: ReservationService) {}
+  constructor(
+    private reservationService: ReservationService,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit() {
+    if (this.isBrowser) {
+      // Initialize mobile detection
+      this.isMobile = window.innerWidth < 768;
+      if (this.isMobile) {
+        this.currentView = 'week';
+      }
+
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        this.isMobile = window.innerWidth < 768;
+        if (this.isMobile) {
+          this.currentView = 'week';
+        }
+      });
+    }
+    
     this.loadReservations();
   }
 
   loadReservations() {
     this.reservationService.getReservations(this.spaceId).subscribe(reservations => {
-      this.reservations = reservations;
+      // Ensure all dates are properly handled as Date objects
+      this.reservations = reservations.map(reservation => ({
+        ...reservation,
+        startTime: new Date(reservation.startTime),
+        endTime: new Date(reservation.endTime)
+      }));
+      
       this.generateCalendarDays();
       if (this.currentView === 'week') {
         this.generateWeekDays();
@@ -597,36 +671,29 @@ export class CalendarComponent implements OnInit {
   }
 
   generateCalendarDays() {
+    // Get first day of the month
     const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+    // Get last day of the month
     const lastDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
-    const startingDayOfWeek = firstDay.getDay();
+    
+    // Get the first day to display (last days of previous month if needed)
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+    
+    // Get the last day to display (first days of next month if needed)
+    const endDate = new Date(lastDay);
+    const remainingDays = 6 - endDate.getDay();
+    endDate.setDate(endDate.getDate() + remainingDays);
     
     this.calendarDays = [];
-
-    // agregar días del mes anterior
-    const previousMonth = new Date(firstDay);
-    previousMonth.setDate(0);
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      const date = new Date(previousMonth);
-      date.setDate(previousMonth.getDate() - i);
-      this.calendarDays.push(this.createCalendarDay(date, false));
-    }
-
-    // agregar días del mes actual
-    for (let i = 1; i <= lastDay.getDate(); i++) {
-      const date = new Date(firstDay);
-      date.setDate(i);
-      this.calendarDays.push(this.createCalendarDay(date, true));
-    }
-
-    // agregar días del mes siguiente
-    const remainingDays = 42 - (this.calendarDays.length % 7);
-    if (remainingDays < 7) {
-      const nextMonth = new Date(lastDay);
-      for (let i = 1; i <= remainingDays; i++) {
-        nextMonth.setDate(nextMonth.getDate() + 1);
-        this.calendarDays.push(this.createCalendarDay(new Date(nextMonth), false));
-      }
+    const currentDate = new Date(startDate);
+    
+    while (currentDate <= endDate) {
+      this.calendarDays.push(this.createCalendarDay(
+        new Date(currentDate),
+        currentDate.getMonth() === this.currentDate.getMonth()
+      ));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
   }
 
@@ -643,18 +710,25 @@ export class CalendarComponent implements OnInit {
   }
 
   createCalendarDay(date: Date, isCurrentMonth: boolean): CalendarDay {
+    // Set the time to midnight for date-only comparison
+    const dayDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
     const dayReservations = this.reservations.filter(reservation => {
+      // Get just the date part of the reservation start time
       const resDate = new Date(reservation.startTime);
-      return resDate.getDate() === date.getDate() &&
-             resDate.getMonth() === date.getMonth() &&
-             resDate.getFullYear() === date.getFullYear();
+      const reservationDate = new Date(resDate.getFullYear(), resDate.getMonth(), resDate.getDate());
+      
+      // Compare dates only (ignoring time)
+      return dayDate.getTime() === reservationDate.getTime();
     });
 
     return {
-      date,
+      date: dayDate,
       isCurrentMonth,
       hasReservations: dayReservations.length > 0,
-      reservations: dayReservations
+      reservations: dayReservations.sort((a, b) => 
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+      )
     };
   }
 
@@ -721,14 +795,14 @@ export class CalendarComponent implements OnInit {
     const endTime = new Date(reservation.endTime);
     const startMinutes = startTime.getUTCHours() * 60 + startTime.getUTCMinutes();
     const endMinutes = endTime.getUTCHours() * 60 + endTime.getUTCMinutes();
-    return (endMinutes - startMinutes);
+    return (endMinutes - startMinutes) - 4;
   }
 
   getEventTop(reservation: Reservation): number {
     const startTime = new Date(reservation.startTime);
     const hours = startTime.getUTCHours();
     const minutes = startTime.getUTCMinutes();
-    return ((hours - 8) * 60) + minutes;
+    return ((hours - 8) * 60) + minutes + 2;
   }
 
   selectWeek(day: CalendarDay) {
@@ -755,10 +829,14 @@ export class CalendarComponent implements OnInit {
   }
 
   getFormattedTime(dateStr: string | Date): string {
-    const dateObj = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
-    const hours = dateObj.getUTCHours().toString().padStart(2, '0');
-    const minutes = dateObj.getUTCMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    if (!dateStr) return '';
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    return date.toLocaleTimeString('es-ES', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      hour12: false,
+      timeZone: 'UTC'
+    });
   }
 
   getReservationTitle(reservation: Reservation): string {
