@@ -147,7 +147,8 @@ import { Space } from '../../models/space';
 
     .create-form {
       position: sticky;
-      top: 2rem;
+      top: 6rem;
+      z-index: 10;
       background: white;
       border-radius: 1rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05),

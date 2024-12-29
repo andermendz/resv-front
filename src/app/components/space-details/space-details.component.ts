@@ -43,9 +43,12 @@ interface TimeOption {
         
         <app-calendar [spaceId]="spaceId" *ngIf="!isCreatingReservation"></app-calendar>
 
-        <div class="reservation-list" *ngIf="!isCreatingReservation">
+        <div class="reservation-list card" *ngIf="!isCreatingReservation">
           <div class="section-header">
-            <h3>Lista de Reservas</h3>
+            <div class="header-title">
+              <i class="fas fa-list"></i>
+              <h3>Lista de Reservas</h3>
+            </div>
             <div class="filter-controls">
               <div class="date-filter">
                 <div class="input-group">
@@ -91,10 +94,15 @@ interface TimeOption {
                 <tr *ngFor="let reservation of filteredReservations">
                   <td>{{ reservation.startTime | date:'dd/MM/yyyy' }}</td>
                   <td>{{ reservation.startTime | date:'HH:mm':'UTC' }} - {{ reservation.endTime | date:'HH:mm':'UTC' }}</td>
-                  <td>{{ reservation.cedula }}</td>
+                  <td>
+                    <div class="cedula-cell">
+                      <i class="fas fa-user"></i>
+                      {{ reservation.cedula }}
+                    </div>
+                  </td>
                   <td>
                     <button 
-                      class="delete-button"
+                      class="action-button delete-button"
                       (click)="confirmDeleteReservation(reservation)"
                       title="Cancelar Reserva">
                       <i class="fas fa-trash"></i>
@@ -104,7 +112,10 @@ interface TimeOption {
                 </tr>
                 <tr *ngIf="filteredReservations.length === 0">
                   <td colspan="4" class="empty-message">
-                    No hay reservas que coincidan con los filtros
+                    <div class="empty-state">
+                      <i class="fas fa-calendar-xmark"></i>
+                      <p>No hay reservas que coincidan con los filtros</p>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -455,197 +466,199 @@ interface TimeOption {
     }
 
     .reservation-list {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       margin-top: 2rem;
-      border-top: 1px solid var(--gray-200);
-      padding-top: 2rem;
+      overflow: hidden;
+    }
 
-      .section-header {
-        margin-bottom: 1.5rem;
+    .section-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
 
-        h3 {
-          font-size: 1.125rem;
-          color: var(--gray-800);
-          margin: 0;
-        }
-      }
-
-      .filter-controls {
-        display: flex;
-        gap: 1rem;
+      @media (min-width: 1024px) {
+        flex-direction: row;
         align-items: center;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-        background: var(--gray-50);
-        padding: 1rem;
-        border-radius: 0.75rem;
-
-        @media (max-width: 768px) {
-          flex-direction: column;
-          align-items: stretch;
-          gap: 0.75rem;
-        }
+        justify-content: space-between;
       }
 
-      .date-filter {
+      .header-title {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        flex: 2;
-
-        @media (max-width: 768px) {
-          flex-direction: column;
-          width: 100%;
-        }
-
-        .input-group {
-          flex: 1;
-
-          input {
-            width: 100%;
-          }
-        }
-      }
-
-      .input-group {
-        position: relative;
-        
-        &.search {
-          flex: 1;
-          min-width: 200px;
-
-          @media (max-width: 768px) {
-            width: 100%;
-          }
-        }
+        gap: 0.75rem;
 
         i {
-          position: absolute;
-          left: 0.75rem;
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--gray-400);
-          font-size: 0.875rem;
+          font-size: 1.25rem;
+          color: var(--primary);
         }
 
-        input {
-          width: 100%;
-          padding: 0.625rem 0.75rem 0.625rem 2.25rem;
-          border: 1px solid var(--gray-200);
-          border-radius: 0.5rem;
-          font-size: 0.875rem;
-          background: white;
-          transition: all 0.2s;
+        h3 {
+          margin: 0;
+          color: var(--gray-800);
+          font-size: 1.25rem;
+        }
+      }
+    }
 
-          &:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 1px var(--primary);
-          }
+    .filter-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
 
-          &::placeholder {
-            color: var(--gray-400);
-          }
+      @media (min-width: 768px) {
+        flex-direction: row;
+        align-items: center;
+        width: auto;
+      }
+    }
+
+    .date-filter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+
+      .date-separator {
+        color: var(--gray-400);
+        padding: 0 0.25rem;
+      }
+    }
+
+    .input-group {
+      position: relative;
+      flex: 1;
+
+      i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+      }
+
+      input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        &::placeholder {
+          color: var(--gray-400);
         }
       }
 
-      .reservations-table {
-        margin-top: 1rem;
-        background: white;
-        border: 1px solid var(--gray-200);
-        border-radius: 0.75rem;
-        overflow: hidden;
+      &.search {
+        min-width: 240px;
+      }
+    }
 
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
+    .reservations-table {
+      overflow-x: auto;
 
-        th {
-          background: var(--gray-50);
-          padding: 0.875rem 1rem;
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+
+        th, td {
+          padding: 1rem 1.5rem;
           text-align: left;
-          font-weight: 600;
-          color: var(--gray-700);
-          font-size: 0.875rem;
           border-bottom: 1px solid var(--gray-200);
           white-space: nowrap;
         }
 
-        td {
-          padding: 1rem;
-          border-bottom: 1px solid var(--gray-100);
+        th {
+          background: var(--gray-50);
+          font-weight: 600;
           color: var(--gray-700);
-          font-size: 0.875rem;
-          vertical-align: middle;
-        }
-
-        tr:last-child td {
-          border-bottom: none;
+          position: sticky;
+          top: 0;
+          z-index: 1;
         }
 
         tbody tr {
-          transition: background-color 0.2s;
+          transition: all 0.2s;
 
           &:hover {
             background: var(--gray-50);
           }
         }
+      }
+    }
 
-        .delete-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          padding: 0.5rem 0.75rem;
-          border: none;
-          border-radius: 0.375rem;
-          background: var(--red-50);
-          color: var(--red-600);
-          font-size: 0.75rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s;
+    .cedula-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
 
-          i {
-            font-size: 0.875rem;
-          }
+      i {
+        color: var(--gray-400);
+        font-size: 0.875rem;
+      }
+    }
 
-          &:hover {
-            background: var(--red-100);
-            color: var(--red-700);
-          }
+    .action-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &.delete-button {
+        background: var(--gray-100);
+        color: var(--danger);
+
+        &:hover:not(:disabled) {
+          background: var(--danger);
+          color: white;
         }
 
-        .empty-message {
-          text-align: center;
-          color: var(--gray-500);
-          padding: 3rem 1rem;
-          font-size: 0.875rem;
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
+      }
 
-        @media (max-width: 768px) {
-          border-radius: 0.5rem;
-          margin: 0 -1rem;
-          border-left: none;
-          border-right: none;
-          
-          th, td {
-            padding: 0.75rem;
-            font-size: 0.813rem;
-          }
+      i {
+        font-size: 0.875rem;
+      }
+    }
 
-          .delete-button {
-            padding: 0.375rem 0.625rem;
-            font-size: 0.688rem;
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 3rem 1.5rem;
+      color: var(--gray-500);
 
-            i {
-              font-size: 0.75rem;
-            }
+      i {
+        font-size: 2.5rem;
+        color: var(--gray-400);
+      }
 
-            span {
-              display: none;
-            }
-          }
-        }
+      p {
+        margin: 0;
+        text-align: center;
       }
     }
 
