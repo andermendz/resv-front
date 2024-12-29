@@ -1,84 +1,84 @@
-# Space Reservation System
+# Sistema de Reserva de Espacios
 
-## Description
-Web system for space management and reservations. Allows users to view space availability, make reservations, and manage existing bookings through an intuitive and modern interface.
+## Descripción
+Sistema web para la gestión y reserva de espacios. Permite a los usuarios ver la disponibilidad de espacios, realizar reservas y gestionar las reservas existentes a través de una interfaz intuitiva y moderna.
 
-## Key Features
-- 📅 Interactive calendar with monthly and weekly views
-- 🔍 Search and filter reservations by date and ID
-- ⚡ Responsive interface adapted for mobile devices
-- 🕒 Schedule management from 8:00 AM to 10:00 PM
-- 📱 Optimized mobile view
-- 🔄 Real-time availability updates
+## Características Principales
+- 📅 Calendario interactivo con vistas mensuales y semanales
+- 🔍 Búsqueda y filtrado de reservas por fecha e ID
+- ⚡ Interfaz responsiva adaptada para dispositivos móviles
+- 🕒 Gestión de horarios de 8:00 AM a 10:00 PM
+- 📱 Vista optimizada para móviles
+- 🔄 Actualizaciones de disponibilidad en tiempo real
 
-## Technical Requirements
-- Node.js (version 18 or higher)
-- Angular CLI (version 17 or higher)
-- Modern web browser (Chrome, Firefox, Safari, Edge)
+## Requisitos Técnicos
+- Node.js (versión 18 o superior)
+- Angular CLI (versión 17 o superior)
+- Navegador web moderno (Chrome, Firefox, Safari, Edge)
 
-## Installation
+## Instalación
 
-1. Clone the repository:
+1. Clonar el repositorio:
 ```bash
 git clone [REPOSITORY_URL]
 ```
 
-2. Install dependencies:
+2. Instalar dependencias:
 ```bash
 cd SpaceReservation.Frontend
 npm install
 ```
 
-3. Start the development server:
+3. Iniciar el servidor de desarrollo:
 ```bash
 ng serve
 ```
 
-4. Open your browser at `http://localhost:4200`
+4. Abrir el navegador en `http://localhost:4200`
 
-## Usage
+## Uso
 
-### Spaces View
-- View all available spaces
-- Detailed information for each space
-- Current occupancy status
+### Vista de Espacios
+- Ver todos los espacios disponibles
+- Información detallada de cada espacio
+- Estado actual de ocupación
 
-### Reservations
-- Create new reservations
-- Date and time selection
-- Real-time availability validation
-- Manage existing reservations
+### Reservas
+- Crear nuevas reservas
+- Selección de fecha y hora
+- Validación de disponibilidad en tiempo real
+- Gestionar reservas existentes
 
-### Filters and Search
-- Filter by date range
-- Search by ID number
-- Monthly and weekly calendar views
+### Filtros y Búsqueda
+- Filtrar por rango de fechas
+- Buscar por número de ID
+- Vistas de calendario mensual y semanal
 
-## Project Structure
+## Estructura del Proyecto
 ```
 src/
 ├── app/
-│   ├── components/      # Application components
-│   ├── services/        # Business logic services
-│   ├── models/          # Data interfaces and models
+│   ├── components/      # Componentes de la aplicación
+│   ├── services/        # Servicios de lógica de negocio
+│   ├── models/          # Interfaces y modelos de datos
 │   └── ...
-├── assets/             # Static resources
-└── styles/            # Global styles
+├── assets/             # Recursos estáticos
+└── styles/            # Estilos globales
 ```
 
-## Technologies Used
+## Tecnologías Utilizadas
 - Angular 17
 - TypeScript
 - SCSS
 - Angular CLI
-- Font Awesome (icons)
+- Font Awesome (iconos)
 
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+## Contribución
+1. Haz un fork del repositorio
+2. Crea tu rama de características (`git checkout -b feature/CaracteristicaIncreible`)
+3. Realiza tus cambios (`git commit -m 'Añadir alguna CaracteristicaIncreible'`)
+4. Sube la rama (`git push origin feature/CaracteristicaIncreible`)
+5. Abre un Pull Request
 
-## License
-This project is licensed under the [LICENSE_TYPE].
+## Licencia
+Este proyecto está licenciado bajo [LICENSE_TYPE].
