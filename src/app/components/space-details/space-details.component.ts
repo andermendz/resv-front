@@ -134,7 +134,9 @@ interface TimeOption {
                 name="cedula"
                 placeholder="Ingresa cédula del reservante"
                 [class.error]="hasError('cedula')"
-                (input)="validateForm()">
+                (input)="validateForm()"
+                (keypress)="onlyCedulaNumbers($event)"
+                pattern="[0-9]*">
               <div class="error-message" *ngIf="getError('cedula')">
                 {{ getError('cedula') }}
               </div>
@@ -228,14 +230,30 @@ interface TimeOption {
     </div>
   `,
   styles: [`
+    /* Add responsive breakpoints at the top */
+    :host {
+      --mobile-breakpoint: 768px;
+      --small-mobile-breakpoint: 480px;
+    }
+
     .page-header {
       margin-bottom: 2rem;
+      padding: 1rem;
+
+      @media (max-width: 768px) {
+        margin-bottom: 1rem;
+      }
     }
 
     .header-content {
       display: flex;
       gap: 2rem;
       align-items: flex-start;
+
+      @media (max-width: 768px) {
+        gap: 1rem;
+        flex-direction: column;
+      }
     }
 
     .back-button {
@@ -279,10 +297,27 @@ interface TimeOption {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+
+      @media (max-width: 768px) {
+        margin-bottom: 1rem;
+      }
 
       h3 {
         margin: 0;
         color: var(--gray-800);
+
+        @media (max-width: 768px) {
+          font-size: 1.125rem;
+        }
+      }
+
+      .primary-button {
+        @media (max-width: 768px) {
+          width: 100%;
+          justify-content: center;
+        }
       }
     }
 
@@ -291,6 +326,11 @@ interface TimeOption {
       border-radius: 0.75rem;
       padding: 1.5rem;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+      @media (max-width: 768px) {
+        padding: 1rem;
+        border-radius: 0.5rem;
+      }
     }
 
     .reservation-form {
@@ -307,6 +347,10 @@ interface TimeOption {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
+
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
     }
 
     .helper-text {
@@ -326,6 +370,15 @@ interface TimeOption {
       justify-content: flex-end;
       gap: 1rem;
       margin-top: 1rem;
+
+      @media (max-width: 768px) {
+        flex-direction: column-reverse;
+        
+        button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     }
 
     .primary-button {
@@ -353,6 +406,11 @@ interface TimeOption {
       i {
         font-size: 1rem;
       }
+
+      @media (max-width: 768px) {
+        padding: 0.875rem 1rem;
+        font-size: 0.938rem;
+      }
     }
 
     .secondary-button {
@@ -371,6 +429,11 @@ interface TimeOption {
       &:hover {
         background: var(--gray-200);
       }
+
+      @media (max-width: 768px) {
+        padding: 0.875rem 1rem;
+        font-size: 0.938rem;
+      }
     }
 
     .form-group {
@@ -382,66 +445,206 @@ interface TimeOption {
         font-weight: 500;
         color: var(--gray-700);
       }
+
+      input, select {
+        @media (max-width: 768px) {
+          padding: 0.75rem;
+          font-size: 1rem;
+        }
+      }
     }
 
     .reservation-list {
       margin-top: 2rem;
       border-top: 1px solid var(--gray-200);
       padding-top: 2rem;
-    }
 
-    .filter-controls {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
+      .section-header {
+        margin-bottom: 1.5rem;
 
-    .date-filter {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .date-separator {
-      color: var(--gray-400);
-      font-weight: 500;
-    }
-
-    .input-group {
-      position: relative;
-      display: flex;
-      align-items: center;
-
-      i {
-        position: absolute;
-        left: 0.75rem;
-        color: var(--gray-400);
-        font-size: 0.875rem;
-      }
-
-      input {
-        padding: 0.625rem 0.75rem 0.625rem 2.25rem;
-        border: 1px solid var(--gray-200);
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        min-width: 150px;
-        transition: all 0.2s;
-
-        &:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 0 1px var(--primary);
+        h3 {
+          font-size: 1.125rem;
+          color: var(--gray-800);
+          margin: 0;
         }
       }
 
-      &.search {
-        flex: 1;
-        min-width: 200px;
+      .filter-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.75rem;
+
+        @media (max-width: 768px) {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.75rem;
+        }
+      }
+
+      .date-filter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 2;
+
+        @media (max-width: 768px) {
+          flex-direction: column;
+          width: 100%;
+        }
+
+        .input-group {
+          flex: 1;
+
+          input {
+            width: 100%;
+          }
+        }
+      }
+
+      .input-group {
+        position: relative;
+        
+        &.search {
+          flex: 1;
+          min-width: 200px;
+
+          @media (max-width: 768px) {
+            width: 100%;
+          }
+        }
+
+        i {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--gray-400);
+          font-size: 0.875rem;
+        }
 
         input {
           width: 100%;
+          padding: 0.625rem 0.75rem 0.625rem 2.25rem;
+          border: 1px solid var(--gray-200);
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          background: white;
+          transition: all 0.2s;
+
+          &:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+          }
+
+          &::placeholder {
+            color: var(--gray-400);
+          }
+        }
+      }
+
+      .reservations-table {
+        margin-top: 1rem;
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        overflow: hidden;
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        th {
+          background: var(--gray-50);
+          padding: 0.875rem 1rem;
+          text-align: left;
+          font-weight: 600;
+          color: var(--gray-700);
+          font-size: 0.875rem;
+          border-bottom: 1px solid var(--gray-200);
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 1rem;
+          border-bottom: 1px solid var(--gray-100);
+          color: var(--gray-700);
+          font-size: 0.875rem;
+          vertical-align: middle;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tbody tr {
+          transition: background-color 0.2s;
+
+          &:hover {
+            background: var(--gray-50);
+          }
+        }
+
+        .delete-button {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          border: none;
+          border-radius: 0.375rem;
+          background: var(--red-50);
+          color: var(--red-600);
+          font-size: 0.75rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          i {
+            font-size: 0.875rem;
+          }
+
+          &:hover {
+            background: var(--red-100);
+            color: var(--red-700);
+          }
+        }
+
+        .empty-message {
+          text-align: center;
+          color: var(--gray-500);
+          padding: 3rem 1rem;
+          font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+          border-radius: 0.5rem;
+          margin: 0 -1rem;
+          border-left: none;
+          border-right: none;
+          
+          th, td {
+            padding: 0.75rem;
+            font-size: 0.813rem;
+          }
+
+          .delete-button {
+            padding: 0.375rem 0.625rem;
+            font-size: 0.688rem;
+
+            i {
+              font-size: 0.75rem;
+            }
+
+            span {
+              display: none;
+            }
+          }
         }
       }
     }
@@ -468,49 +671,6 @@ interface TimeOption {
         background: var(--red-100);
         color: var(--red-700);
       }
-    }
-
-    .reservations-table {
-      margin-top: 1rem;
-      border: 1px solid var(--gray-200);
-      border-radius: 0.75rem;
-      overflow: hidden;
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      th {
-        background: var(--gray-50);
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: var(--gray-700);
-        font-size: 0.875rem;
-        border-bottom: 1px solid var(--gray-200);
-      }
-
-      td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid var(--gray-100);
-        color: var(--gray-600);
-        font-size: 0.875rem;
-      }
-
-      tr:last-child td {
-        border-bottom: none;
-      }
-
-      tbody tr:hover {
-        background: var(--gray-50);
-      }
-    }
-
-    .empty-message {
-      text-align: center;
-      color: var(--gray-500);
-      padding: 2rem !important;
     }
 
     .icon-button {
@@ -552,6 +712,11 @@ interface TimeOption {
 
       i {
         font-size: 1.25rem;
+      }
+
+      @media (max-width: 768px) {
+        padding: 0.875rem;
+        font-size: 0.875rem;
       }
     }
   `]
@@ -740,7 +905,7 @@ export class SpaceDetailsComponent implements OnInit {
     let startDate = this.filterStartDate ? new Date(this.filterStartDate) : undefined;
     let endDate = this.filterEndDate ? new Date(this.filterEndDate) : undefined;
 
-    // reiniciar las partes de tiempo para asegurar días completos
+    // Reset time parts for proper date comparison
     if (startDate) {
       startDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0);
     }
@@ -750,11 +915,22 @@ export class SpaceDetailsComponent implements OnInit {
 
     this.reservationService.getReservations(
       this.spaceId,
-      this.filterCedula,
+      undefined,
       startDate,
       endDate
     ).subscribe(reservations => {
-      this.filteredReservations = reservations;
+      // Apply cedula filter locally
+      this.filteredReservations = reservations.filter(reservation => {
+        if (this.filterCedula && this.filterCedula.trim() !== '') {
+          return reservation.cedula.toLowerCase().includes(this.filterCedula.toLowerCase().trim());
+        }
+        return true;
+      });
+
+      // Sort reservations by date and time
+      this.filteredReservations.sort((a, b) => {
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
     });
   }
 
@@ -798,5 +974,14 @@ export class SpaceDetailsComponent implements OnInit {
     
     // Create date in UTC
     return new Date(Date.UTC(year, month - 1, day, parseInt(hours), parseInt(minutes), 0));
+  }
+
+  onlyCedulaNumbers(event: KeyboardEvent): boolean {
+    // Allow only number keys and control keys (backspace, delete, etc)
+    const charCode = (event.which) ? event.which : event.keyCode;
+    if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+      return false;
+    }
+    return true;
   }
 } 

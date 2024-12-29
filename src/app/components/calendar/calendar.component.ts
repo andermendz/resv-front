@@ -283,110 +283,100 @@ interface CalendarDay {
 
       .week-header {
         display: grid;
-        grid-template-columns: 50px repeat(7, 1fr);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
+        grid-template-columns: 60px repeat(7, 1fr);
         position: sticky;
         top: 0;
+        background: white;
         z-index: 2;
+        border-bottom: 1px solid var(--gray-200);
 
-        @media (max-width: 767px) {
-          grid-template-columns: 40px repeat(7, 1fr);
+        .time-cell {
+          padding: 0.75rem;
+          border-right: 1px solid var(--gray-200);
+          background: var(--gray-50);
+        }
+
+        .day-column-header {
+          padding: 0.75rem;
+          text-align: center;
+          border-right: 1px solid var(--gray-200);
+          background: var(--gray-50);
+
+          &.today {
+            background: var(--primary-50);
+            color: var(--primary);
+            font-weight: 500;
+          }
+
+          .day-name {
+            font-weight: 500;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+          }
+
+          .day-number {
+            font-size: 1.125rem;
+            font-weight: 600;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+          }
+
+          .month-label {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+          }
         }
       }
 
-      .day-column-header {
-        padding: 0.75rem 0.5rem;
-        text-align: center;
-        font-size: 0.875rem;
-        border-left: 1px solid var(--gray-200);
+      .time-grid {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
         background: white;
-
-        &.today {
-          background: var(--primary-50);
-          font-weight: 500;
-
-          .day-number {
-            background: var(--primary);
-            color: white;
-          }
-        }
-
-        .day-name {
-          font-weight: 500;
-          color: var(--gray-700);
-          margin-bottom: 0.25rem;
-
-          @media (max-width: 767px) {
-            font-size: 0.75rem;
-          }
-        }
-
-        .day-number {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          margin-bottom: 0.25rem;
-
-          @media (max-width: 767px) {
-            width: 20px;
-            height: 20px;
-            font-size: 0.875rem;
-          }
-        }
-
-        .month-label {
-          font-size: 0.75rem;
-          color: var(--gray-500);
-
-          @media (max-width: 767px) {
-            font-size: 0.6875rem;
-          }
-        }
       }
 
       .scrollable-content {
         flex: 1;
         overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        position: relative;
       }
 
       .time-body {
-        display: grid;
-        grid-template-columns: 50px 1fr;
+        display: flex;
         min-height: 100%;
-
-        @media (max-width: 767px) {
-          grid-template-columns: 40px 1fr;
-        }
       }
 
       .time-column {
-        .time-slot-label {
-          height: 60px;
-          padding: 0.25rem;
-          text-align: center;
-          font-size: 0.75rem;
-          color: var(--gray-500);
-          border-right: 1px solid var(--gray-200);
+        width: 60px;
+        flex-shrink: 0;
+        border-right: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        position: sticky;
+        left: 0;
+        z-index: 1;
+      }
 
-          @media (max-width: 767px) {
-            font-size: 0.6875rem;
-          }
-        }
+      .time-slot-label {
+        height: 60px;
+        padding: 0.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .day-columns {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
+        flex: 1;
       }
 
       .day-column {
-        position: relative;
         border-right: 1px solid var(--gray-200);
+        position: relative;
 
         &:last-child {
           border-right: none;
@@ -400,6 +390,46 @@ interface CalendarDay {
       .hour-slot {
         height: 60px;
         border-bottom: 1px solid var(--gray-200);
+      }
+
+      @media (max-width: 768px) {
+        .week-header {
+          grid-template-columns: 50px repeat(7, 1fr);
+
+          .time-cell {
+            padding: 0.5rem;
+          }
+
+          .day-column-header {
+            padding: 0.5rem;
+
+            .day-name {
+              font-size: 0.75rem;
+            }
+
+            .day-number {
+              font-size: 1rem;
+            }
+
+            .month-label {
+              font-size: 0.688rem;
+            }
+          }
+        }
+
+        .time-column {
+          width: 50px;
+        }
+
+        .time-slot-label {
+          height: 50px;
+          font-size: 0.75rem;
+          padding: 0.25rem;
+        }
+
+        .hour-slot {
+          height: 50px;
+        }
       }
 
       .event-block {
