@@ -203,7 +203,7 @@ interface CalendarDay {
               <i class="fas fa-calendar"></i>
               FECHA
             </div>
-            <div class="info-value">{{ selectedReservation.startTime | date:'longDate':'es' }}</div>
+            <div class="info-value capitalize">{{ getFormattedDate(selectedReservation.startTime) }}</div>
           </div>
           <div class="info-row">
             <div class="info-label">
@@ -1106,12 +1106,11 @@ export class CalendarComponent implements OnInit {
 
   getFormattedTime(dateStr: string | Date): string {
     if (!dateStr) return '';
-    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+    const date = new Date(dateStr);
     return date.toLocaleTimeString('es-ES', { 
       hour: '2-digit', 
       minute: '2-digit', 
-      hour12: false,
-      timeZone: 'UTC'
+      hour12: false
     });
   }
 
@@ -1144,10 +1143,25 @@ export class CalendarComponent implements OnInit {
 
   showReservationDetails(event: Event, reservation: Reservation) {
     event.stopPropagation();
-    this.selectedReservation = reservation;
+    // Ensure dates are properly handled
+    this.selectedReservation = {
+      ...reservation,
+      startTime: new Date(reservation.startTime),
+      endTime: new Date(reservation.endTime)
+    };
   }
 
   closeReservationDetails() {
     this.selectedReservation = null;
+  }
+
+  getFormattedDate(date: Date | string): string {
+    if (!date) return '';
+    const d = new Date(date);
+    const weekDay = d.toLocaleDateString('es-ES', { weekday: 'long' });
+    const day = d.getDate();
+    const month = d.toLocaleDateString('es-ES', { month: 'long' });
+    const year = d.getFullYear();
+    return `${weekDay}, ${day} de ${month} ${year}`;
   }
 } 
