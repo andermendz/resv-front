@@ -3,6 +3,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Reservation } from '../../models/reservation';
 import { ReservationService } from '../../services/reservation.service';
+import { SpaceService } from '../../services/space.service';
+import { ModalComponent } from '../../components/modal/modal.component';
 
 interface CalendarDay {
   date: Date;
@@ -14,12 +16,17 @@ interface CalendarDay {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   template: `
     <div class="calendar-container">
       <div class="calendar-header">
         <div class="calendar-nav">
-          <button class="icon-button" (click)="navigate('prev')" title="Anterior">
+          <button 
+            class="icon-button" 
+            (click)="navigate('prev')" 
+            [disabled]="isPrevDisabled()"
+            [class.disabled]="isPrevDisabled()"
+            title="Anterior">
             <i class="fas fa-chevron-left"></i>
           </button>
           <h3>
@@ -74,6 +81,7 @@ interface CalendarDay {
                 <div 
                   class="event-indicator" 
                   *ngFor="let reservation of day.reservations | slice:0:3"
+                  (click)="showReservationDetails($event, reservation)"
                   [title]="getReservationTitle(reservation)">
                   <span class="event-time">{{ getFormattedTime(reservation.startTime) }}</span>
                 </div>
@@ -116,6 +124,7 @@ interface CalendarDay {
                           class="event-block"
                           [style.height.px]="getEventHeight(reservation)"
                           [style.top.px]="getEventTop(reservation)"
+                          (click)="showReservationDetails($event, reservation)"
                           [title]="getReservationTitle(reservation)">
                           <div class="event-content">
                             <div class="event-time">
@@ -137,6 +146,82 @@ interface CalendarDay {
         </div>
       </div>
     </div>
+
+    <!-- Space Delete Confirmation Modal -->
+    <app-modal *ngIf="selectedSpace" [title]="'Confirmar Eliminación'" (close)="closeSpaceDeleteConfirmation()">
+      <div class="confirmation-modal">
+        <div class="modal-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="modal-content">
+          <h3>¿Estás seguro que deseas eliminar este espacio?</h3>
+          <div class="warning-message">
+            <p>Esta acción eliminará permanentemente el espacio y todas sus reservaciones asociadas.</p>
+          </div>
+          <div class="space-info">
+            <div class="info-item">
+              <i class="fas fa-building"></i>
+              <div class="info-content">
+                <label>Espacio</label>
+                <span>{{ selectedSpace.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeSpaceDeleteConfirmation()">
+            Cancelar
+          </button>
+          <button class="btn-danger" (click)="deleteSpace()">
+            <i class="fas fa-trash-alt"></i>
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </app-modal>
+
+    <!-- Reservation Details Modal -->
+    <app-modal *ngIf="selectedReservation" [title]="'Detalles de la Reserva'" (close)="closeReservationDetails()">
+      <div class="reservation-details-modal">
+        <div class="info-grid">
+          <div class="info-row">
+            <div class="info-label">
+              <i class="fas fa-building"></i>
+              ESPACIO
+            </div>
+            <div class="info-value">{{ selectedReservation.spaceName }}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <i class="fas fa-id-card"></i>
+              CÉDULA
+            </div>
+            <div class="info-value">{{ selectedReservation.cedula }}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <i class="fas fa-calendar"></i>
+              FECHA
+            </div>
+            <div class="info-value">{{ selectedReservation.startTime | date:'longDate':'es' }}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <i class="fas fa-clock"></i>
+              HORA INICIO
+            </div>
+            <div class="info-value">{{ getFormattedTime(selectedReservation.startTime) }}</div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <i class="fas fa-clock"></i>
+              HORA FIN
+            </div>
+            <div class="info-value">{{ getFormattedTime(selectedReservation.endTime) }}</div>
+          </div>
+        </div>
+      </div>
+    </app-modal>
   `,
   styles: [`
     .calendar-container {
@@ -149,13 +234,15 @@ interface CalendarDay {
     }
 
     .calendar-header {
-      padding: 1.5rem 1rem;
+      padding: 1rem;
       border-bottom: 1px solid var(--gray-200);
       background: white;
       position: sticky;
       top: 0;
       z-index: 3;
       flex-shrink: 0;
+      width: 100%;
+      overflow: hidden;
 
       @media (min-width: 768px) {
         padding: 1.5rem;
@@ -167,13 +254,18 @@ interface CalendarDay {
       align-items: center;
       justify-content: space-between;
       margin-bottom: 1rem;
+      gap: 0.5rem;
 
       h3 {
         margin: 0;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
-        min-width: 180px;
         text-align: center;
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
 
         @media (min-width: 768px) {
           font-size: 1.25rem;
@@ -195,8 +287,14 @@ interface CalendarDay {
       cursor: pointer;
       transition: all 0.2s;
 
-      &:hover {
+      &:hover:not(.disabled) {
         background: var(--gray-200);
+      }
+
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
       }
 
       i {
@@ -273,34 +371,53 @@ interface CalendarDay {
       display: flex;
       flex-direction: column;
       min-height: 0;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
 
       .time-grid {
         display: flex;
         flex-direction: column;
-        height: 100%;
-        min-height: 0;
+        min-width: fit-content;
       }
 
       .week-header {
         display: grid;
-        grid-template-columns: 60px repeat(7, 1fr);
-        position: sticky;
-        top: 0;
+        grid-template-columns: 60px repeat(7, minmax(120px, 1fr));
         background: white;
         z-index: 2;
         border-bottom: 1px solid var(--gray-200);
+        position: sticky;
+        top: 0;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 50px repeat(7, minmax(120px, 1fr));
+        }
 
         .time-cell {
-          padding: 0.75rem;
+          padding: 0.75rem 0.5rem;
           border-right: 1px solid var(--gray-200);
           background: var(--gray-50);
+          position: sticky;
+          left: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          @media (max-width: 768px) {
+            padding: 0.5rem 0.25rem;
+          }
         }
 
         .day-column-header {
-          padding: 0.75rem;
+          padding: 0.75rem 0.5rem;
           text-align: center;
           border-right: 1px solid var(--gray-200);
           background: var(--gray-50);
+
+          @media (max-width: 768px) {
+            padding: 0.5rem 0.25rem;
+          }
 
           &.today {
             background: var(--primary-50);
@@ -312,6 +429,10 @@ interface CalendarDay {
             font-weight: 500;
             font-size: 0.875rem;
             margin-bottom: 0.25rem;
+
+            @media (max-width: 768px) {
+              font-size: 0.75rem;
+            }
           }
 
           .day-number {
@@ -319,31 +440,30 @@ interface CalendarDay {
             font-weight: 600;
             line-height: 1;
             margin-bottom: 0.25rem;
+
+            @media (max-width: 768px) {
+              font-size: 1rem;
+            }
           }
 
           .month-label {
             font-size: 0.75rem;
             color: var(--gray-500);
+
+            @media (max-width: 768px) {
+              font-size: 0.688rem;
+            }
           }
         }
       }
 
-      .time-grid {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        background: white;
-      }
-
       .scrollable-content {
         flex: 1;
-        overflow-y: auto;
         position: relative;
       }
 
       .time-body {
         display: flex;
-        min-height: 100%;
       }
 
       .time-column {
@@ -354,6 +474,10 @@ interface CalendarDay {
         position: sticky;
         left: 0;
         z-index: 1;
+
+        @media (max-width: 768px) {
+          width: 50px;
+        }
       }
 
       .time-slot-label {
@@ -366,11 +490,17 @@ interface CalendarDay {
         display: flex;
         align-items: center;
         justify-content: center;
+
+        @media (max-width: 768px) {
+          height: 50px;
+          font-size: 0.75rem;
+          padding: 0.25rem;
+        }
       }
 
       .day-columns {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(7, minmax(120px, 1fr));
         flex: 1;
       }
 
@@ -390,44 +520,8 @@ interface CalendarDay {
       .hour-slot {
         height: 60px;
         border-bottom: 1px solid var(--gray-200);
-      }
 
-      @media (max-width: 768px) {
-        .week-header {
-          grid-template-columns: 50px repeat(7, 1fr);
-
-          .time-cell {
-            padding: 0.5rem;
-          }
-
-          .day-column-header {
-            padding: 0.5rem;
-
-            .day-name {
-              font-size: 0.75rem;
-            }
-
-            .day-number {
-              font-size: 1rem;
-            }
-
-            .month-label {
-              font-size: 0.688rem;
-            }
-          }
-        }
-
-        .time-column {
-          width: 50px;
-        }
-
-        .time-slot-label {
-          height: 50px;
-          font-size: 0.75rem;
-          padding: 0.25rem;
-        }
-
-        .hour-slot {
+        @media (max-width: 768px) {
           height: 50px;
         }
       }
@@ -447,11 +541,10 @@ interface CalendarDay {
         transition: all 0.2s;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 
-        @media (max-width: 767px) {
-          font-size: 0.6875rem;
+        @media (max-width: 768px) {
           left: 2px;
           right: 2px;
-          padding: 1px 0;
+          font-size: 0.688rem;
         }
 
         &:hover {
@@ -460,67 +553,52 @@ interface CalendarDay {
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
-        &:not(:last-child) {
-          margin-bottom: 4px;
-        }
-      }
+        .event-content {
+          padding: 0.375rem 0.5rem;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          background: linear-gradient(to right, rgba(0, 0, 0, 0.05), transparent);
 
-      .event-content {
-        padding: 0.375rem 0.5rem;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        background: linear-gradient(to right, rgba(0, 0, 0, 0.05), transparent);
-
-        @media (max-width: 767px) {
-          padding: 0.25rem 0.375rem;
-        }
-      }
-
-      .event-time {
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 0.8125rem;
-
-        @media (max-width: 767px) {
-          font-size: 0.75rem;
-        }
-      }
-
-      .event-user {
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        opacity: 0.9;
-        font-size: 0.75rem;
-
-        @media (max-width: 767px) {
-          font-size: 0.6875rem;
+          @media (max-width: 768px) {
+            padding: 0.25rem 0.375rem;
+          }
         }
 
-        i {
-          font-size: 0.75rem;
-          opacity: 0.8;
+        .event-time {
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .event-user {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          opacity: 0.9;
+
+          i {
+            font-size: 0.75rem;
+            opacity: 0.8;
+          }
         }
       }
     }
 
     .month-view {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      
       .calendar-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        background: var(--gray-50);
-        flex: 1;
+        gap: 1px;
+        background: var(--gray-200);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.5rem;
+        overflow: hidden;
       }
 
       .weekday-header {
@@ -528,20 +606,14 @@ interface CalendarDay {
         text-align: center;
         font-weight: 600;
         color: var(--gray-700);
-        background: white;
-        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
         font-size: 0.875rem;
-        position: sticky;
-        top: 0;
-        z-index: 2;
       }
 
       .calendar-day {
+        aspect-ratio: 1;
         padding: 0.75rem;
-        border-right: 1px solid var(--gray-200);
-        border-bottom: 1px solid var(--gray-200);
         background: white;
-        min-height: 120px;
         cursor: pointer;
         transition: all 0.2s;
         display: flex;
@@ -554,92 +626,242 @@ interface CalendarDay {
         &.other-month {
           background: var(--gray-50);
           color: var(--gray-400);
-
-          .event-indicator {
-            opacity: 0.5;
-          }
-        }
-
-        &.current-month {
-          color: var(--gray-800);
-        }
-
-        &.has-events {
-          background: var(--gray-50);
         }
 
         &.today {
           background: var(--primary-50);
-          font-weight: 500;
 
           .day-number {
             background: var(--primary);
             color: white;
           }
+        }
 
-          .event-indicator {
-            background: var(--primary);
-            color: white;
+        .day-number {
+          font-weight: 600;
+          font-size: 0.875rem;
+          height: 24px;
+          width: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          margin-bottom: 0.5rem;
+        }
+
+        .day-events {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          overflow: hidden;
+        }
+
+        .event-indicator {
+          padding: 0.25rem 0.5rem;
+          background: var(--primary);
+          color: white;
+          border-radius: 0.25rem;
+          font-size: 0.75rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .more-events {
+          font-size: 0.75rem;
+          color: var(--gray-600);
+          text-align: center;
+          padding: 0.25rem;
+          background: var(--gray-100);
+          border-radius: 0.25rem;
+          margin-top: auto;
+        }
+      }
+    }
+
+    .confirmation-modal {
+      padding: 1.5rem;
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+
+      .modal-icon {
+        color: var(--danger);
+        margin-bottom: 1rem;
+
+        i {
+          font-size: 3rem;
+        }
+      }
+
+      .modal-content {
+        h3 {
+          color: var(--gray-800);
+          font-size: 1.125rem;
+          margin-bottom: 1rem;
+          font-weight: 600;
+        }
+
+        .warning-message {
+          background: var(--danger-50);
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+
+          p {
+            color: var(--danger-700);
+            font-size: 0.875rem;
+            margin: 0;
           }
         }
       }
 
-      .day-number {
-        font-weight: 600;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
-        height: 24px;
-        width: 24px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
+      .space-info {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: left;
+
+        .info-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+
+          i {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-top: 0.125rem;
+          }
+
+          .info-content {
+            flex: 1;
+            min-width: 0;
+
+            label {
+              display: block;
+              font-size: 0.75rem;
+              color: var(--gray-600);
+              margin-bottom: 0.25rem;
+              font-weight: 500;
+              text-transform: uppercase;
+              letter-spacing: 0.025em;
+            }
+
+            span {
+              display: block;
+              color: var(--gray-800);
+              font-size: 0.875rem;
+              font-weight: 500;
+            }
+          }
+        }
       }
 
-      .day-events {
+      .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+
+        button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.625rem 1.25rem;
+          border: none;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          i {
+            font-size: 0.875rem;
+          }
+        }
+
+        .btn-secondary {
+          background: var(--gray-100);
+          color: var(--gray-700);
+
+          &:hover {
+            background: var(--gray-200);
+          }
+        }
+
+        .btn-danger {
+          background: var(--danger);
+          color: white;
+
+          &:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+          }
+        }
+
+        @media (max-width: 500px) {
+          flex-direction: column;
+          
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
+
+    .reservation-details-modal {
+      padding: 1rem;
+      max-width: 500px;
+      margin: 0 auto;
+
+      .info-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .info-row {
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
-        flex: 1;
-      }
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
 
-      .event-indicator {
-        padding: 0.375rem 0.5rem;
-        background: var(--primary);
-        color: white;
-        border-radius: 0.25rem;
-        font-size: 0.75rem;
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: all 0.2s;
+        .info-label {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--gray-600);
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.025em;
 
-        &:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          i {
+            color: var(--primary);
+            font-size: 1rem;
+          }
         }
 
-        .event-time {
+        .info-value {
+          color: var(--gray-800);
+          font-size: 0.9375rem;
           font-weight: 500;
-        }
-      }
+          padding-left: 1.5rem;
 
-      .more-events {
-        font-size: 0.75rem;
-        color: var(--gray-600);
-        text-align: center;
-        margin-top: 0.25rem;
-        padding: 0.25rem;
-        background: var(--gray-100);
-        border-radius: 0.25rem;
+          &.capitalize {
+            text-transform: capitalize;
+          }
+        }
       }
     }
   `]
 })
 export class CalendarComponent implements OnInit {
   @Input() spaceId!: number;
+  spaceName: string = '';
   weekDays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   hours = Array.from({ length: 15 }, (_, i) => i + 8);
   currentDate = new Date();
@@ -648,10 +870,13 @@ export class CalendarComponent implements OnInit {
   currentWeek: CalendarDay[] = [];
   reservations: Reservation[] = [];
   isMobile = false;
+  selectedSpace: any = null;
   private isBrowser: boolean;
+  selectedReservation: Reservation | null = null;
 
   constructor(
     private reservationService: ReservationService,
+    private spaceService: SpaceService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -763,6 +988,10 @@ export class CalendarComponent implements OnInit {
   }
 
   navigate(direction: 'prev' | 'next') {
+    if (direction === 'prev' && this.isPrevDisabled()) {
+      return;
+    }
+
     switch (this.currentView) {
       case 'month':
         const monthDelta = direction === 'prev' ? -1 : 1;
@@ -775,6 +1004,23 @@ export class CalendarComponent implements OnInit {
         this.currentDate = new Date(this.currentDate.getTime() + weekDelta * 24 * 60 * 60 * 1000);
         this.generateWeekDays();
         break;
+    }
+  }
+
+  isPrevDisabled(): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (this.currentView === 'month') {
+      // For month view, check if current month is current month or future
+      const currentMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+      const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      return currentMonth <= thisMonth;
+    } else {
+      // For week view, check if start of week is before or equal to today
+      const startOfWeek = new Date(this.currentDate);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      return startOfWeek <= today;
     }
   }
 
@@ -871,5 +1117,37 @@ export class CalendarComponent implements OnInit {
 
   getReservationTitle(reservation: Reservation): string {
     return `Reservante: ${reservation.cedula} - ${this.getFormattedTime(reservation.startTime)} - ${this.getFormattedTime(reservation.endTime)}`;
+  }
+
+  showSpaceDeleteConfirmation(event: Event, space: any) {
+    event.stopPropagation();
+    this.selectedSpace = space;
+  }
+
+  closeSpaceDeleteConfirmation() {
+    this.selectedSpace = null;
+  }
+
+  deleteSpace() {
+    if (this.selectedSpace) {
+      this.spaceService.deleteSpace(this.selectedSpace.id).subscribe({
+        next: () => {
+          this.closeSpaceDeleteConfirmation();
+          // Optionally refresh the spaces list or emit an event
+        },
+        error: (error) => {
+          console.error('Error deleting space:', error);
+        }
+      });
+    }
+  }
+
+  showReservationDetails(event: Event, reservation: Reservation) {
+    event.stopPropagation();
+    this.selectedReservation = reservation;
+  }
+
+  closeReservationDetails() {
+    this.selectedReservation = null;
   }
 } 

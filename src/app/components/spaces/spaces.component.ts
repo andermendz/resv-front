@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { SpaceService } from '../../services/space.service';
 import { ValidationService, ValidationError } from '../../services/validation.service';
 import { Space } from '../../models/space';
+import { ModalComponent } from '../../components/modal/modal.component';
 
 @Component({
   selector: 'app-spaces',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ModalComponent],
   template: `
     <div class="page-header">
       <h2>Gestión de Espacios</h2>
@@ -92,7 +93,7 @@ import { Space } from '../../models/space';
                 </button>
                 <button 
                   class="action-button delete-button"
-                  (click)="confirmDelete(space)"
+                  (click)="showSpaceDeleteConfirmation($event, space)"
                   title="Eliminar Espacio">
                   <i class="fas fa-trash"></i>
                 </button>
@@ -114,6 +115,39 @@ import { Space } from '../../models/space';
         </div>
       </main>
     </div>
+
+    <!-- Delete Space Confirmation Modal -->
+    <app-modal *ngIf="selectedSpace" [title]="'Confirmar Eliminación'" (close)="closeSpaceDeleteConfirmation()">
+      <div class="confirmation-modal">
+        <div class="modal-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="modal-content">
+          <h3>¿Estás seguro que deseas eliminar este espacio?</h3>
+          <div class="warning-message">
+            <p>Esta acción eliminará permanentemente el espacio y todas sus reservaciones asociadas.</p>
+          </div>
+          <div class="space-info">
+            <div class="info-item">
+              <i class="fas fa-building"></i>
+              <div class="info-content">
+                <label>Espacio</label>
+                <span>{{ selectedSpace.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" (click)="closeSpaceDeleteConfirmation()">
+            Cancelar
+          </button>
+          <button class="btn-danger" (click)="deleteSpace()">
+            <i class="fas fa-trash-alt"></i>
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </app-modal>
   `,
   styles: [`
     .content-layout {
@@ -467,6 +501,137 @@ import { Space } from '../../models/space';
         margin: 0 auto;
       }
     }
+
+    .confirmation-modal {
+      padding: 1.5rem;
+      max-width: 500px;
+      margin: 0 auto;
+      text-align: center;
+
+      .modal-icon {
+        color: var(--danger);
+        margin-bottom: 1rem;
+
+        i {
+          font-size: 3rem;
+        }
+      }
+
+      .modal-content {
+        h3 {
+          color: var(--gray-800);
+          font-size: 1.125rem;
+          margin-bottom: 1rem;
+          font-weight: 600;
+        }
+
+        .warning-message {
+          background: var(--danger-50);
+          border-radius: 0.5rem;
+          padding: 1rem;
+          margin-bottom: 1.5rem;
+
+          p {
+            color: var(--danger-700);
+            font-size: 0.875rem;
+            margin: 0;
+          }
+        }
+      }
+
+      .space-info {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: left;
+
+        .info-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+
+          i {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-top: 0.125rem;
+          }
+
+          .info-content {
+            flex: 1;
+            min-width: 0;
+
+            label {
+              display: block;
+              font-size: 0.75rem;
+              color: var(--gray-600);
+              margin-bottom: 0.25rem;
+              font-weight: 500;
+              text-transform: uppercase;
+              letter-spacing: 0.025em;
+            }
+
+            span {
+              display: block;
+              color: var(--gray-800);
+              font-size: 0.875rem;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+
+        button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.625rem 1.25rem;
+          border: none;
+          border-radius: 0.5rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          i {
+            font-size: 0.875rem;
+          }
+        }
+
+        .btn-secondary {
+          background: var(--gray-100);
+          color: var(--gray-700);
+
+          &:hover {
+            background: var(--gray-200);
+          }
+        }
+
+        .btn-danger {
+          background: var(--danger);
+          color: white;
+
+          &:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+          }
+        }
+
+        @media (max-width: 500px) {
+          flex-direction: column;
+          
+          button {
+            width: 100%;
+          }
+        }
+      }
+    }
   `]
 })
 export class SpacesComponent implements OnInit {
@@ -474,6 +639,7 @@ export class SpacesComponent implements OnInit {
   newSpace = { name: '', description: '' };
   validationErrors: ValidationError[] = [];
   isFormValid = false;
+  selectedSpace: any = null;
 
   constructor(
     private router: Router,
@@ -516,19 +682,30 @@ export class SpacesComponent implements OnInit {
     }
   }
 
-  deleteSpace(id: number) {
-    this.spaceService.deleteSpace(id).subscribe(() => {
-      this.loadSpaces();
-    });
+  showSpaceDeleteConfirmation(event: Event, space: any) {
+    event.stopPropagation();
+    this.selectedSpace = space;
+  }
+
+  closeSpaceDeleteConfirmation() {
+    this.selectedSpace = null;
+  }
+
+  deleteSpace() {
+    if (this.selectedSpace) {
+      this.spaceService.deleteSpace(this.selectedSpace.id).subscribe({
+        next: () => {
+          this.closeSpaceDeleteConfirmation();
+          this.loadSpaces(); // Refresh the spaces list
+        },
+        error: (error) => {
+          console.error('Error deleting space:', error);
+        }
+      });
+    }
   }
 
   viewSpace(space: Space) {
     this.router.navigate(['/spaces', space.id]);
-  }
-
-  confirmDelete(space: Space) {
-    if (confirm(`¿Estás seguro que deseas eliminar el espacio "${space.name}"?`)) {
-      this.deleteSpace(space.id);
-    }
   }
 }

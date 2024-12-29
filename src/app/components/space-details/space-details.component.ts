@@ -7,6 +7,7 @@ import { ReservationService } from '../../services/reservation.service';
 import { ValidationService, ValidationError } from '../../services/validation.service';
 import { Space } from '../../models/space';
 import { CalendarComponent } from '../calendar/calendar.component';
+import { ModalComponent } from '../modal/modal.component';
 
 interface TimeOption {
   value: string;
@@ -16,7 +17,7 @@ interface TimeOption {
 @Component({
   selector: 'app-space-details',
   standalone: true,
-  imports: [CommonModule, FormsModule, CalendarComponent],
+  imports: [CommonModule, FormsModule, CalendarComponent, ModalComponent],
   template: `
     <div class="page-header">
       <div class="header-content">
@@ -103,7 +104,7 @@ interface TimeOption {
                   <td>
                     <button 
                       class="action-button delete-button"
-                      (click)="confirmDeleteReservation(reservation)"
+                      (click)="showDeleteConfirmation(reservation)"
                       title="Cancelar Reserva">
                       <i class="fas fa-trash"></i>
                       <span>Cancelar</span>
@@ -239,6 +240,38 @@ interface TimeOption {
         </div>
       </div>
     </div>
+
+    <app-modal *ngIf="showDeleteModal" [title]="'Confirmar Cancelación'" (close)="hideDeleteModal()">
+      <div class="confirmation-content">
+        <div class="confirmation-message">
+          <i class="fas fa-exclamation-triangle"></i>
+          <p>¿Estás seguro que deseas cancelar esta reserva?</p>
+          <div class="reservation-details">
+            <div class="detail-item">
+              <span class="label">Fecha:</span>
+              <span>{{ selectedReservation?.startTime | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Hora:</span>
+              <span>{{ selectedReservation?.startTime | date:'HH:mm':'UTC' }} - {{ selectedReservation?.endTime | date:'HH:mm':'UTC' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Cédula:</span>
+              <span>{{ selectedReservation?.cedula }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="confirmation-actions">
+          <button class="secondary-button" (click)="hideDeleteModal()">
+            Cancelar
+          </button>
+          <button class="delete-button" (click)="deleteReservation()">
+            <i class="fas fa-trash"></i>
+            Confirmar Cancelación
+          </button>
+        </div>
+      </div>
+    </app-modal>
   `,
   styles: [`
     /* Add responsive breakpoints at the top */
@@ -624,12 +657,12 @@ interface TimeOption {
       transition: all 0.2s;
 
       &.delete-button {
-        background: var(--gray-100);
-        color: var(--danger);
+        background: var(--danger);
+        color: white;
 
-        &:hover:not(:disabled) {
-          background: var(--danger);
-          color: white;
+        &:hover {
+          background: var(--danger-dark);
+          transform: translateY(-1px);
         }
 
         &:disabled {
@@ -732,6 +765,89 @@ interface TimeOption {
         font-size: 0.875rem;
       }
     }
+
+    .confirmation-content {
+      padding: 1.5rem;
+    }
+
+    .confirmation-message {
+      text-align: center;
+      margin-bottom: 2rem;
+
+      i {
+        font-size: 3rem;
+        color: var(--danger);
+        margin-bottom: 1rem;
+      }
+
+      p {
+        font-size: 1.125rem;
+        color: var(--gray-800);
+        margin: 0 0 1.5rem;
+      }
+    }
+
+    .reservation-details {
+      background: var(--gray-50);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: left;
+
+      .detail-item {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        .label {
+          font-weight: 500;
+          color: var(--gray-600);
+          min-width: 60px;
+        }
+      }
+    }
+
+    .confirmation-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 1.5rem;
+
+      @media (max-width: 768px) {
+        flex-direction: column-reverse;
+        
+        button {
+          width: 100%;
+        }
+      }
+
+      .delete-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: var(--danger);
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          opacity: 0.95;
+          transform: translateY(-1px);
+        }
+
+        i {
+          font-size: 1rem;
+        }
+      }
+    }
   `]
 })
 export class SpaceDetailsComponent implements OnInit {
@@ -761,6 +877,9 @@ export class SpaceDetailsComponent implements OnInit {
   allReservations: any[] = [];
   filteredReservations: any[] = [];
   reservationError: string | null = null;
+
+  showDeleteModal = false;
+  selectedReservation: any = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -947,9 +1066,20 @@ export class SpaceDetailsComponent implements OnInit {
     });
   }
 
-  confirmDeleteReservation(reservation: any) {
-    if (confirm(`¿Estás seguro que deseas cancelar esta reserva?`)) {
-      this.reservationService.deleteReservation(reservation.id).subscribe(() => {
+  showDeleteConfirmation(reservation: any) {
+    this.selectedReservation = reservation;
+    this.showDeleteModal = true;
+  }
+
+  hideDeleteModal() {
+    this.showDeleteModal = false;
+    this.selectedReservation = null;
+  }
+
+  deleteReservation() {
+    if (this.selectedReservation) {
+      this.reservationService.deleteReservation(this.selectedReservation.id).subscribe(() => {
+        this.hideDeleteModal();
         this.loadReservations();
       });
     }
